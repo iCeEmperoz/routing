@@ -23,7 +23,7 @@ class Client:
     def change_link(self, change):
         """Add a link to the client.
 
-        The change argument should be a tuple ('add', link).
+        The "change" argument should be a tuple ('add', link).
         """
         self.link_changes.put(change)
 

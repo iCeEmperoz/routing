@@ -257,7 +257,7 @@ class Network:
     def handle_interrupt(self, signum, frame):
         self.join_all()
         print("")
-        quit()
+        quit()  
 
 
 def main():
