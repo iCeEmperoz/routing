@@ -1,3 +1,9 @@
+####################################################
+# LSrouter.py
+# Name:Tran Van Minh
+# HUID: 23020119
+#####################################################
+
 import heapq
 import json
 from packet import Packet
@@ -36,7 +42,7 @@ class LSrouter(Router):
                 if current_seq is None or seq_num > current_seq:
                     self.seq_nums[src] = seq_num
                     self.graph[src] = neighbors
-                    self.recalculate_routes()
+                    self.update_forwarding_table()
                     self.flood_except(packet, exclude_port = port)
             except Exception as e:
                 print(f"[{self.addr}] Error parsing LSP from {packet.src_addr}: {e}")
@@ -47,8 +53,8 @@ class LSrouter(Router):
         self.neighbor_to_port[endpoint] = port
 
         self.update_graph()
-        self.recalculate_routes()
-        self.broadcast_lsp()
+        self.update_forwarding_table()
+        self.broadcast_link_state()
 
     def handle_remove_link(self, port):
         if port in self.port_to_neighbor:
@@ -57,22 +63,22 @@ class LSrouter(Router):
             self.neighbors.pop(neighbor, None)
 
             self.update_graph()
-            self.recalculate_routes()
-            self.broadcast_lsp()
+            self.update_forwarding_table()
+            self.broadcast_link_state()
 
     def handle_time(self, time_ms):
         if time_ms - self.last_time >= self.heartbeat_time:
             self.last_time = time_ms
             self.update_graph()
-            self.broadcast_lsp()
+            self.broadcast_link_state()
 
-    def broadcast_lsp(self):
-        lsp = json.dumps({
+    def broadcast_link_state(self):
+        content = json.dumps({
             "src": self.addr,
             "seq_num": self.seq_num,
             "neighbors": self.neighbors
         })
-        packet = Packet(Packet.ROUTING, self.addr, None, lsp)
+        packet = Packet(Packet.ROUTING, self.addr, None, content)
 
         for neighbor, port in self.neighbor_to_port.items():
             self.send(port, packet)
@@ -87,7 +93,7 @@ class LSrouter(Router):
         self.seq_nums[self.addr] = self.seq_num
         self.graph[self.addr] = dict(self.neighbors)
 
-    def recalculate_routes(self):
+    def update_forwarding_table(self):
         d = {self.addr: 0} #distance
         prev = {}
         visited = set()
